@@ -1,6 +1,9 @@
 package com.librarymanagementsystem;
 
-public class User {
+import java.io.Serializable;
+
+public class User implements Serializable {
+    private static final long serialVersionUID = 1L; // Recommended for Serializable classes
     private String name;
 
     public User(String name) {
@@ -9,5 +12,9 @@ public class User {
 
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

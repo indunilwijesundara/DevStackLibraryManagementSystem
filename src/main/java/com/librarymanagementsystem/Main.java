@@ -3,6 +3,7 @@ package com.librarymanagementsystem;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,7 +18,6 @@ public class Main {
         for(LibraryItem item:libraryItems){
             library.addItem(item);
         }
-
         List<User> users = LibraryIO.loadUserListFromFile("userlist.lms");
         for(User user:users){
             library.addUser(user);
@@ -68,7 +68,7 @@ public class Main {
                 BufferedReader createItemType = new BufferedReader(new InputStreamReader(System.in));
                 int createItemTypeStr;
                 try {
-                   createItemTypeStr = Integer.parseInt(createItemType.readLine());
+                    createItemTypeStr = Integer.parseInt(createItemType.readLine());
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -105,10 +105,95 @@ public class Main {
                     library.addItem(createMagazine);
                 }
 
-            } else if (mainOptionStr == 5) {
+            }else if(mainOptionStr == 2){
+                System.out.println("Please enter the name of the new user:");
+                BufferedReader userNameReader = new BufferedReader(new InputStreamReader(System.in));
+                String userName;
+                try {
+                    userName = userNameReader.readLine();
+                } catch (IOException e) {
+                    System.out.println("Error reading input. Please try again.");
+                    continue;
+                }
+
+                boolean userExists = library.getUserList().stream()
+                        .anyMatch(user -> Objects.equals(user.getName(), userName));
+                if (userExists) {
+                    System.out.println("A user with this name already exists! Please try a different name.");
+                } else {
+                    User newUser = new User(userName);
+                    library.addUser(newUser);
+                    System.out.println("User '" + userName + "' has been successfully added!");
+                }
+            }
+            else if (mainOptionStr == 3) {
+                // Option 3: User needs to borrow an item
+                System.out.println("Enter the user's name:");
+                String borrowerName = new BufferedReader(new InputStreamReader(System.in)).readLine();
+                User borrower = library.getUserList().stream()
+                        .filter(user -> user.getName().equalsIgnoreCase(borrowerName))
+                        .findFirst()
+                        .orElse(null);
+
+                if (borrower == null) {
+                    System.out.println("User not found! Please register the user before borrowing.");
+                } else {
+                    System.out.println("Enter the serial number of the item to borrow:");
+                    String borrowSerialNumber = new BufferedReader(new InputStreamReader(System.in)).readLine();
+                    boolean itemExists = library.getLibraryItems().stream()
+                            .anyMatch(item -> item.getSerialNumber().equals(borrowSerialNumber));
+
+                    if (!itemExists) {
+                        System.out.println("Item with serial number '" + borrowSerialNumber + "' not found in the library.");
+                    } else {
+                        library.borrowItem(borrowSerialNumber, borrower);
+                    }
+                }
+            }
+            else if (mainOptionStr == 4) {
+                System.out.println("Enter the serial number of the item you want to return:");
+                BufferedReader returnItemSerialNumberReader = new BufferedReader(new InputStreamReader(System.in));
+                String serialNumberToReturn;
+
+                try {
+                    serialNumberToReturn = returnItemSerialNumberReader.readLine();
+                } catch (IOException e) {
+                    System.out.println("Error reading input. Please try again.");
+                    continue;
+                }
+
+                System.out.println("Enter your name to confirm the return:");
+                BufferedReader userNameReader = new BufferedReader(new InputStreamReader(System.in));
+                String userName;
+
+                try {
+                    userName = userNameReader.readLine();
+                } catch (IOException e) {
+                    System.out.println("Error reading input. Please try again.");
+                    continue;
+                }
+
+                User userToReturnItem = null;
+                for (User user : library.getUserList()) {
+                    if (user.getName().equals(userName)) {
+                        userToReturnItem = user;
+                        break;
+                    }
+                }
+
+                if (userToReturnItem == null) {
+                    System.out.println("User not found. Please make sure the name is correct.");
+                } else {
+                    library.returnBorrowedItem(serialNumberToReturn, userToReturnItem);
+                }
+            }
+
+            else if (mainOptionStr == 5) {
                 exit = true;
             }
         }
         LibraryIO.saveItemToFile(library.getLibraryItems(),"itemlist.lms");
+        LibraryIO.saveUserListToFile(library.getUserList(), "userlist.lms");
+        LibraryIO.saveBorrowedItemsToFile(library.getBorrowedItems(), "borroweditems.lms");
     }
 }
